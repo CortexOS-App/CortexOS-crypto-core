@@ -7,15 +7,8 @@ import CryptoKit
 // Handles AES-256-GCM encryption for journal entries and vault data.
 // Uses iOS Keychain for secure key storage.
 //
-// Thread-safe initialization with NSLock + Task to prevent race conditions
-// during app startup. Call `initialize()` before any encrypt/decrypt operations.
-//
-// Key setup flow:
-//   1. Onboarding: deriveAllKeys() → setupWithDerivedKeys() stores derived key
-//   2. App launch: initialize() loads existing key from Keychain
-//   3. Restore: deriveAllKeys(userSalt:) → setupWithDerivedKeys() re-derives key
-//
-// Per-user salt stored in Keychain for future re-derivation on restore.
+// IMPORTANT: Call `initialize()` before any encryption/decryption operations
+// to avoid race conditions during app startup.
 // ═══════════════════════════════════════════════════════════════════════════════
 
 public final class EncryptionManager {
@@ -147,7 +140,8 @@ public final class EncryptionManager {
         }
 
         // Store auth token for cloud backup API authentication
-        // (Implementation: store keys.authToken in your auth token storage)
+        UserPreferencesManager.shared.authToken = keys.authToken
+        print("EncryptionManager: Auth token stored for cloud backup")
 
         isInitialized = true
     }
@@ -156,15 +150,15 @@ public final class EncryptionManager {
 
     /// Store per-user salt in Keychain
     public func storeUserSalt(_ salt: Data) throws {
-        try keychainManager.save(salt, forKey: "com.cortexos.user_salt")
+        try keychainManager.save(salt, forKey: Constants.KeychainKeys.userSalt)
     }
 
     /// Load per-user salt from Keychain
     /// Returns nil if no salt is stored (existing users or new device without server sync)
     public func loadUserSalt() -> Data? {
-        try? keychainManager.load(forKey: "com.cortexos.user_salt")
+        try? keychainManager.load(forKey: Constants.KeychainKeys.userSalt)
     }
-
+    
     // MARK: - Encryption
 
     public func encryptForStorage(_ text: String) throws -> Data {
