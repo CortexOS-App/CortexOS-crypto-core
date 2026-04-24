@@ -20,7 +20,7 @@ The full app is proprietary. This subset is published so users and security rese
 | **KeyDerivation.swift** | Argon2id key derivation (t=3, m=64MB, p=4). Derives accountId, encryptionKey, and authToken from a BIP39 recovery phrase. Per-user salt support for cross-device security. |
 | **RecoveryPhraseManager.swift** | BIP39-compliant 6-word + 4-digit PIN recovery phrase. Generation, validation, challenge verification, and cross-platform hashing (SHA-256). |
 | **EncryptionManager.swift** | AES-256-GCM encryption/decryption with thread-safe initialization. Master key stored in iOS Keychain. Per-user salt management for cross-device restore. |
-| **VaultManager.swift** | Zero-knowledge encrypted backup/restore. Server never sees plaintext. Per-user salt uploaded alongside vault for cross-device key re-derivation. |
+| **VaultManager.swift** | Zero-knowledge encrypted backup/restore (vault format v3). Server never sees plaintext. Backs up entries and behavioral pattern snapshots. Per-user salt uploaded alongside vault for cross-device key re-derivation. |
 
 ## Architecture
 
@@ -52,11 +52,12 @@ Recovery Phrase (6 words + PIN)
 │       VaultManager.swift        │
 │    Zero-Knowledge Backup        │
 │                                 │
-│  Entries ──► JSON ──► Encrypt   │
+│  Entries + Pattern Snapshots    │
+│  ──► JSON ──► Encrypt           │
 │  ──► Upload to Cloudflare R2    │
 │                                 │
 │  Download ──► Decrypt ──► JSON  │
-│  ──► Restore entries            │
+│  ──► Restore entries + patterns │
 │                                 │
 │  Per-user salt synced to server │
 │  for cross-device restore       │
