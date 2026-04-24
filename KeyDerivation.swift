@@ -17,12 +17,6 @@ import CryptoKit
 // - Hash Length: 32 bytes (256 bits)
 // - Salt: Raw UTF-8 bytes (NO hashing, variable length)
 //
-// Per-user salt support:
-// - accountId uses FIXED salt only (cross-platform server lookup identifier)
-// - encryptionKey uses purpose-prefix + per-user salt (domain separation + uniqueness)
-// - authToken uses purpose-prefix + per-user salt (domain separation + uniqueness)
-// - Backward-compatible overload with empty Data() salt for legacy users
-//
 // VERIFICATION:
 // Input: "apple banana cherry dog elephant fox-1234"
 // Run on both iOS and Android - outputs must match exactly.
