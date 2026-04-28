@@ -142,7 +142,7 @@ MIT — see [LICENSE](LICENSE).
 
 ## Links
 
-- **Download:** [App Store](https://apps.apple.com/mt/app/cortexos/id6759070325)
+- **Download:** [App Store](https://apps.apple.com/mt/app/cortexos/id6759070325) [Google Play Store](https://play.google.com/store/apps/details?id=com.cortexos.app)
 - **Website:** [cortexos.app](https://cortexos.app)
 - **Whitepaper:** [cortexos.app/whitepaper](https://cortexos.app/whitepaper)
 - **Product Hunt:** [producthunt.com/@cortexos](https://www.producthunt.com/@cortexos)
