@@ -17,10 +17,10 @@ The full app is proprietary. This subset is published so users and security rese
 
 | File | Purpose |
 |------|---------|
-| **KeyDerivation.swift** | Argon2id key derivation (t=3, m=64MB, p=4). Derives accountId, encryptionKey, and authToken from a BIP39 recovery phrase. Per-user salt support for cross-device security. |
+| **KeyDerivation.swift** | Argon2id key derivation (t=3, m=64MB, p=4). v3 scheme: a 32-byte per-user vault salt is mixed into ALL derived values (accountId, encryptionKey, authToken), plus a phrase-only lookupId (lightweight profile) and a saltKey that encrypts the vault salt at rest on the server. Includes SaltManager: fetch/decrypt distinguishes wrong-phrase from network failure so keys are never derived against a wrong salt. |
 | **RecoveryPhraseManager.swift** | BIP39-compliant 6-word + 4-digit PIN recovery phrase. Generation, validation, challenge verification, and cross-platform hashing (SHA-256). |
-| **EncryptionManager.swift** | AES-256-GCM encryption/decryption with thread-safe initialization. Master key stored in iOS Keychain. Per-user salt management for cross-device restore. |
-| **VaultManager.swift** | Zero-knowledge encrypted backup/restore (vault format v3). Server never sees plaintext. Backs up entries and behavioral pattern snapshots. Per-user salt uploaded alongside vault for cross-device key re-derivation. |
+| **EncryptionManager.swift** | AES-256-GCM encryption/decryption with thread-safe initialization. Two-key model: the phrase-derived master key wraps the portable vault; a separate device-local at-rest key (iOS Keychain) encrypts local columns and never leaves the device. |
+| **VaultManager.swift** | Zero-knowledge encrypted backup/restore (blob format v5, key scheme v3). Server never sees plaintext. Includes the v2 to v3 migration path with a half-migration guard (an account is never stamped v3 while any entry failed re-key), a clobber guard on uploads, and full account deletion. |
 
 ## Architecture
 
@@ -146,3 +146,25 @@ MIT — see [LICENSE](LICENSE).
 - **Website:** [cortexos.app](https://cortexos.app)
 - **Whitepaper:** [cortexos.app/whitepaper](https://cortexos.app/whitepaper)
 - **Product Hunt:** [producthunt.com/@cortexos](https://www.producthunt.com/@cortexos)
+
+## Version parity
+
+The code in this repository matches the shipping apps: **iOS v1.7.0 and Android v1.5.0** (both live). When the crypto layer changes in a release, this repository is updated alongside it. RecoveryPhraseManager, KeyDerivation, EncryptionManager, and VaultManager are copied verbatim from the iOS source tree.
+
+## Independent verification (golden vector)
+
+Both platforms and this repository derive byte-identical keys. Verify with the permanent test vector (a test constant, not a real account):
+
+```
+Phrase:     apple banana cherry dog elephant fox-1234
+Vault salt: 000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f
+Argon2id:   64 MB, 3 iterations, parallelism 4, 32-byte output
+Salt composition (v3): vaultSalt || purpose suffix (UTF-8), suffixes:
+  accountId:  "cortexos-account-id-v3"
+  encKey:     "cortexos-encryption-key-v3"
+  authToken:  "cortexos-auth-token-v3"
+lookupId:   phrase-only, lightweight Argon2id (16 MB, 1 iteration), suffix "cortexos-lookup-id-v3"
+Expected:   lookupId e719eb7b..., accountId a82db13d..., encryptionKey ef6b0ecd..., authToken 4547d10a...
+```
+
+Any Argon2id reference implementation (argon2-cffi, BouncyCastle, the C reference) reproduces these values, which is exactly the point: nothing about the scheme is secret except the phrase.
